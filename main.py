@@ -10,7 +10,7 @@ env_name = sys.argv[2] if len(sys.argv) > 2 else "Breakout-v0"
 
 episodes = int(episodes)
 env_name = env_name
-D = 80 * 80
+D = 84 * 84
 
 text_file = open("Output.txt", "w")
 

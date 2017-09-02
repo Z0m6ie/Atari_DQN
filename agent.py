@@ -5,7 +5,7 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Flatten
 from keras.optimizers import Adam
-sizes = (80, 80, 4)
+sizes = (84, 84, 4)
 
 
 class Agent:
@@ -53,7 +53,7 @@ class Agent:
     def RGBprocess(self, raw_img):
         processed_observation = Image.fromarray(raw_img, 'RGB')
         processed_observation = processed_observation.convert('L')
-        processed_observation = processed_observation.resize((80, 80))
+        processed_observation = processed_observation.resize((84, 84))
         processed_observation = np.array(processed_observation)
         processed_observation = processed_observation.reshape(
             1, processed_observation.shape[0], processed_observation.shape[1])
@@ -61,11 +61,11 @@ class Agent:
 
     def stack(self, processed_observation):
         I_4 = self.old_I_3 if self.old_I_3 is not None else np.zeros(
-            (1, 80, 80))
+            (1, 84, 84))
         I_3 = self.old_I_2 if self.old_I_2 is not None else np.zeros(
-            (1, 80, 80))
+            (1, 84, 84))
         I_2 = self.old_I_1 if self.old_I_1 is not None else np.zeros(
-            (1, 80, 80))
+            (1, 84, 84))
         I_1 = processed_observation
         processed_stack = np.stack((I_4, I_3, I_2, I_1), axis=3)
         self.old_I_4 = I_4
@@ -93,4 +93,4 @@ class Agent:
             target_f[0][action] = target
             self.model.fit(state, target_f, epochs=1, verbose=0)
         if self.epsilon > self.epsilon_min:
-            self.epsilon -= self.epsilon_decay 
+            self.epsilon -= self.epsilon_decay
