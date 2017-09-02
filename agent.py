@@ -15,9 +15,9 @@ class Agent:
         self.memory = deque(maxlen=400000)
         self.gamma = 0.99   # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.005  # exploration will not decay futher
-        self.epsilon_decay = 0.0000398
-        self.learning_rate = 0.0001
+        self.epsilon_min = 0.025  # exploration will not decay futher
+        self.epsilon_decay = 0.00024375
+        self.learning_rate = 0.0005
         self.loss = 0
         self.model = self._build_model()
         self.weight_backup = 'model_weights.h5'
@@ -25,6 +25,7 @@ class Agent:
         self.old_I_3 = None
         self.old_I_4 = None
         self.old_I_1 = None
+        self.f = open('csvfile.csv', 'w')
 
     def _build_model(self):
         model = Sequential()
@@ -91,6 +92,7 @@ class Agent:
                 target = reward + self.gamma * np.amax(self.model.predict(new_state)[0])
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+            history = self.model.fit(state, target_f, epochs=1, verbose=0)
+        self.f.write('{}, {}\n'.format(history.history['loss'][0], target_f[0][action]))
         if self.epsilon > self.epsilon_min:
             self.epsilon -= self.epsilon_decay

@@ -5,14 +5,13 @@ from agent import Agent
 
 
 batch_size = 32
-episodes = sys.argv[1] if len(sys.argv) > 1 else 5000
+episodes = sys.argv[1] if len(sys.argv) > 1 else 10000
 env_name = sys.argv[2] if len(sys.argv) > 2 else "Breakout-v0"
 
 episodes = int(episodes)
 env_name = env_name
 D = 84 * 84
 
-text_file = open("Output.txt", "w")
 
 env = gym.make(env_name)
 
@@ -27,8 +26,8 @@ for i_episodes in range(episodes):
     totalreward = 0
     done = False
     while not done:
-        #if i_episodes % 50 == 0:
-            #env.render()
+        # if i_episodes % 50 == 0:
+            # env.render()
         action = agent.act(state)
         new_state, reward, done, info = env.step(action)
         new_state = agent.RGBprocess(new_state)
@@ -38,10 +37,8 @@ for i_episodes in range(episodes):
         totalreward += reward
     agent.memory_replay(batch_size)
     if done:
-        text_file.write("{} episode, score = {}\n".format(
-            i_episodes + 1, totalreward))
+        print("{} episode, score = {}\n".format(i_episodes + 1, totalreward))
         agent.save_model()
-
+agent.f.close()
 env.close()
-text_file.close()
 gym.upload(env_name, api_key='sk_WRCITkqmTJKYB9hvBk5tPA')
