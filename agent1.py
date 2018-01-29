@@ -29,13 +29,13 @@ class Agent:
 
     def _build_model(self):
         model = Sequential()
-        model.add(Conv2D(32, kernel_size=8, activation='relu', padding='same', input_shape=sizes))
-        model.add(Conv2D(64, kernel_size=6, activation='relu', padding='same'))
-        model.add(Conv2D(64, kernel_size=3, activation='relu', padding='same'))
+        model.add(Conv2D(32, kernel_size=8, activation='relu', strides=2, padding='same', input_shape=sizes))
+        model.add(Conv2D(64, kernel_size=6, activation='relu', strides=2, padding='same'))
+        model.add(Conv2D(64, kernel_size=3, activation='relu', strides=2, padding='same'))
         model.add(Flatten())
         model.add(Dense(256, activation='relu'))
         model.add(Dense(self.action_size))
-        model.add(Activation('softmax'))
+        #model.add(Activation('softmax'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
@@ -47,6 +47,7 @@ class Agent:
             return random.randrange(self.action_size)
         else:
             act_values = self.model.predict(state)
+            print(act_values)
             return np.argmax(act_values[0])
 
     def RGBprocess(self, raw_img):
