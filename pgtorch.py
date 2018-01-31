@@ -16,27 +16,36 @@ parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99)')
 parser.add_argument('--seed', type=int, default=543, metavar='N',
                     help='random seed (default: 543)')
-parser.add_argument('--render', action='store_true',
+parser.add_argument('--render', default=True, action='store_true',
                     help='render the environment')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='interval between training status logs (default: 10)')
-parser.add_argument('--environment', type=str, default='CartPole-v0',
+parser.add_argument('--environment', type=str, default='Pong-v0',
                     help='Select prefered test environment')
 args = parser.parse_args()
 
 
-env = gym.make('CartPole-v0')
+env = gym.make('Pong-v0')
 env.seed(args.seed)  # Set random seed for the enviro
 torch.manual_seed(args.seed)  # Set random seed for pytorch
 action_space = env.action_space.n  # possible actions
 state_space = env.observation_space.shape  # Size of the observation space
+size_in = 80 * 80
 
+def prepro(I):
+    """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
+    I = I[35:195]  # crop
+    I = I[::2, ::2, 0]  # downsample by factor of 2
+    I[I == 144] = 0  # erase background (background type 1)
+    I[I == 109] = 0  # erase background (background type 2)
+    I[I != 0] = 1  # everything else (paddles, ball) just set to 1
+    return I.astype(np.float).ravel()
 
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(state_space[0], 128)
-        self.affine2 = nn.Linear(128, action_space)
+        self.affine1 = nn.Linear(size_in, 200)
+        self.affine2 = nn.Linear(200, action_space)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -80,27 +89,28 @@ def finish_episode():
 
 
 def main():
-    running_reward = 10
+    reward_sum = 0
+    running_reward = None
+    prev_x = None  # used in computing the difference frame
     for i_episode in count(1):
+        done = False
         state = env.reset()
-        for t in range(10000):  # Don't infinite loop while learning
-            action = select_action(state)
-            state, reward, done, _ = env.step(action)
-            if args.render:
+        while not done:  # Don't infinite loop while learning
+            # preprocess the observation, set input to network to be difference image
+            if args.render and i_episode % 20 == 0:
                 env.render()
+            cur_x = prepro(state)
+            x = cur_x - prev_x if prev_x is not None else np.zeros(size_in)
+            prev_x = cur_x
+            action = select_action(x)
+            state, reward, done, _ = env.step(action)
             policy.rewards.append(reward)
-            if done:
-                break
-
-        running_reward = running_reward * 0.99 + t * 0.01
-        finish_episode()
+        running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+        if i_episode % 1 == 0:
+            finish_episode()
         if i_episode % args.log_interval == 0:
-            print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(
-                i_episode, t, running_reward))
-        if running_reward > env.spec.reward_threshold:
-            print("Solved! Running reward is now {} and "
-                  "the last episode runs to {} time steps!".format(running_reward, t))
-            break
+            print('Episode {}\tAverage score: {:.2f}'.format(
+                i_episode, running_reward))
 
 
 if __name__ == '__main__':
