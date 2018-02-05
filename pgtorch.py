@@ -2,6 +2,7 @@ import argparse
 import gym
 import numpy as np
 from itertools import count
+from collections import deque
 
 import torch
 import torch.nn as nn
@@ -89,10 +90,10 @@ def finish_episode():
 
 
 def main():
-    reward_sum = 0
-    running_reward = None
+    running_reward = deque(maxlen=10)
     prev_x = None  # used in computing the difference frame
     for i_episode in count(1):
+        reward_sum = 0
         done = False
         state = env.reset()
         while not done:  # Don't infinite loop while learning
@@ -105,12 +106,13 @@ def main():
             action = select_action(x)
             state, reward, done, _ = env.step(action)
             policy.rewards.append(reward)
-        running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+            reward_sum += reward
+        running_reward.append(reward_sum)
         if i_episode % 1 == 0:
             finish_episode()
         if i_episode % args.log_interval == 0:
-            print('Episode {}\tAverage score: {:.2f}'.format(
-                i_episode, running_reward))
+            print('Episode: {}\tScore: {}\tAverage score: {}'.format(
+                i_episode, reward_sum, np.mean(running_reward)))
 
 
 if __name__ == '__main__':
