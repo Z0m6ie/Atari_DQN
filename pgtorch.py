@@ -32,6 +32,7 @@ torch.manual_seed(args.seed)  # Set random seed for pytorch
 action_space = env.action_space.n  # possible actions
 state_space = env.observation_space.shape  # Size of the observation space
 size_in = 80 * 80
+PATH = 'model_save.p'
 
 def prepro(I):
     """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
@@ -113,6 +114,7 @@ def main():
         if i_episode % args.log_interval == 0:
             print('Episode: {}\tScore: {}\tAverage score: {}'.format(
                 i_episode, reward_sum, np.mean(running_reward)))
+            torch.save(policy.state_dict(), PATH)
 
 
 if __name__ == '__main__':
